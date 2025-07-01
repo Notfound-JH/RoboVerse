@@ -61,7 +61,7 @@ scenario = ScenarioCfg(
 
 # add cameras
 scenario.cameras = [PinholeCameraCfg("cam1", width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0)),
-                    PinholeCameraCfg("cam2", width=1024, height=1024, pos=(0.0, 0.0, 2.5), look_at=(0.0, 0.0, 0.0))]
+                    PinholeCameraCfg("cam2", width=1024, height=1024, pos=(0.3, 0.0, 2.5), look_at=(0.3, 0.0, 0.0))]
 
 # add objects
 scenario.objects = [

@@ -31,19 +31,20 @@ class ObsSaver:
             return
 
         try:
-            rgb_data = next(iter(state.cameras.values())).rgb
-            image = make_grid(rgb_data.permute(0, 3, 1, 2) / 255, nrow=int(rgb_data.shape[0] ** 0.5))  # (C, H, W)
+            image = [make_grid(camera.rgb.permute(0, 3, 1, 2) / 255, nrow=int(camera.rgb.shape[0] ** 0.5))
+                     for camera in state.cameras.values()]
         except Exception as e:
             log.error(f"Error adding observation: {e}")
             return
 
-        if self.image_dir is not None:
-            os.makedirs(self.image_dir, exist_ok=True)
-            save_image(image, os.path.join(self.image_dir, f"rgb_{self.image_idx:04d}.png"))
-            self.image_idx += 1
+        # if self.image_dir is not None:
+        #     os.makedirs(self.image_dir, exist_ok=True)
+        #     save_image(image, os.path.join(self.image_dir, f"rgb_{self.image_idx:04d}.png"))
+        #     self.image_idx += 1
 
-        image = image.cpu().numpy().transpose(1, 2, 0)  # (H, W, C)
-        image = (image * 255).astype(np.uint8)
+        image = [img.cpu().numpy().transpose(1, 2, 0) for img in image]  # (H, W, C)
+        image = [(img * 255).astype(np.uint8) for img in image]  # Convert to uint8
+        image = np.concatenate(image, axis=1)
         self.images.append(image)
 
     def save(self):
