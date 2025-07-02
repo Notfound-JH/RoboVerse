@@ -66,7 +66,7 @@ scenario.cameras = [PinholeCameraCfg("cam1", width=1024, height=1024, pos=(1.5, 
 # add objects
 scenario.objects = [
     RigidObjCfg(
-        name="bbq_sauce1",
+        name="bbq_sauce_1_1",
         scale=(2, 2, 2),
         physics=PhysicStateType.RIGIDBODY,
         usd_path="scene/example_assets/bbq_sauce/usd/bbq_sauce.usd",
@@ -74,7 +74,7 @@ scenario.objects = [
         mjcf_path="scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml",
     ),
     RigidObjCfg(
-        name="bbq_sauce2",
+        name="bbq_sauce_1_2",
         scale=(2, 2, 2),
         physics=PhysicStateType.RIGIDBODY,
         usd_path="scene/example_assets/bbq_sauce/usd/bbq_sauce.usd",
@@ -82,7 +82,7 @@ scenario.objects = [
         mjcf_path="scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml",
     ),
     RigidObjCfg(
-        name="bbq_sauce3",
+        name="bbq_sauce_1_3",
         scale=(2, 2, 2),
         physics=PhysicStateType.RIGIDBODY,
         usd_path="scene/example_assets/bbq_sauce/usd/bbq_sauce.usd",
@@ -99,16 +99,16 @@ env = env_class(scenario)
 init_states = [
     {
         "objects": {
-            "bbq_sauce1": {
+            "bbq_sauce_1_1": {
+                "pos": torch.tensor([0.4, -0.3, 0.13]),
+                "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
+            },
+            "bbq_sauce_1_2": {
                 "pos": torch.tensor([0.4, 0.0, 0.13]),
                 "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
             },
-            "bbq_sauce2": {
-                "pos": torch.tensor([0.6, 0.0, 0.13]),
-                "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
-            },
-            "bbq_sauce3": {
-                "pos": torch.tensor([0.8, 0.0, 0.13]),
+            "bbq_sauce_1_3": {
+                "pos": torch.tensor([0.4, 0.3, 0.13]),
                 "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
             },
         },
@@ -136,7 +136,7 @@ os.makedirs("scene/output", exist_ok=True)
 
 
 ## Main loop
-obs_saver = ObsSaver(video_path=f"scene/output/static_scene_01_{args.sim}.mp4")
+obs_saver = ObsSaver(video_path=f"scene/output/static_scene_02_{args.sim}.mp4")
 obs_saver.add(obs)
 
 step = 0
