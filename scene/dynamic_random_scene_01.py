@@ -74,7 +74,7 @@ scenario.objects = [
         urdf_path="scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf",
         mjcf_path="scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml",
     )
-    for i in range(1, args.num_objects + 1)
+    for i in range(1, args.num_objs + 1)
 ]
 
 
@@ -100,7 +100,7 @@ init_states = [
                 ),
                 "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
             }
-            for i in range(1, args.num_objects + 1)
+            for i in range(1, args.num_objs + 1)
         },
         "robots": {
             "franka": {
