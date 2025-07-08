@@ -175,6 +175,8 @@ for _ in range(100):
         }
         for _ in range(scenario.num_envs)
     ]
+    if step % 50 == 0:
+        log.debug(f"Step {step}, Actions: {actions}")
     obs, reward, success, time_out, extras = env.step(actions)
     obs_saver.add(obs)
     step += 1

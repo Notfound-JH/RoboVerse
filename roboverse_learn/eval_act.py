@@ -268,7 +268,6 @@ def main():
                 obs, reward, success, time_out, extras = env.step(actions)
                 env.handler.refresh_render()
                 # print(reward, success, time_out)
-
                 # eval
                 if success[0]:
                     TotalSuccess += 1

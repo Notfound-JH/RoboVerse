@@ -30,8 +30,21 @@ from metasim.constants import PhysicStateType, SimType
 from metasim.utils import configclass
 from metasim.utils.kinematics_utils import get_curobo_models
 from metasim.utils.setup_util import get_sim_env_class
+from metasim.utils.state import TensorState
 
+def extract_observation(obs: TensorState) -> dict[str, torch.Tensor]:
+    """Extract robot observation from the TensorState."""
+    observation = {}
+    from torchvision.utils import make_grid
+    #extract image
+    for camera_name, camera in obs.cameras.items():
+        rgb_data = camera.rgb
+        image = make_grid(rgb_data.permute(0, 3, 1, 2) / 255, nrow=int(rgb_data.shape[0] ** 0.5))
+        observation[camera_name] = image
+    #extract robot joint positions
+    observation['states'] = next(iter(obs.robots.values())).body_state
 
+    return observation
 @configclass
 class Args:
     """Arguments for the static scene."""
@@ -158,9 +171,20 @@ init_states = [
 
 
 robot = scenario.robots[0]
+log.info(f"Robot: {robot.name}")
+log.info(f"Robot DOF: {robot.num_joints}")
+#log.info(f"Robot joint names: {robot.joint_names}")
+log.info(f"Robot actuator names: {robot.actuators.keys()}")
+log.info(f"Robot parameters:{robot}")
 *_, robot_ik = get_curobo_models(robot)
+
+log.info(f"Robot IK: {robot_ik.robot_config}")
+
 curobo_n_dof = len(robot_ik.robot_config.cspace.joint_names)
+
+log.info(f"Robot number of DOF: {curobo_n_dof}")
 ee_n_dof = len(robot.gripper_open_q)
+log.info(f"Robot end-effector DOF: {ee_n_dof}")
 
 obs, extras = env.reset(states=init_states)
 os.makedirs("get_started/output", exist_ok=True)
@@ -173,8 +197,12 @@ obs_saver.add(obs)
 step = 0
 robot_joint_limits = scenario.robots[0].joint_limits
 for step in range(200):
-    log.debug(f"Step {step}")
     states = env.handler.get_states()
+    if step % 200 == 0:
+        log.debug(f"Step {step}")
+        log.info(f"Step {step}, Robot joint states: {states}")
+
+
     curr_robot_q = states.robots[robot.name].joint_pos.cuda()
 
     seed_config = curr_robot_q[:, :curobo_n_dof].unsqueeze(1).tile([1, robot_ik._num_seeds, 1])
@@ -202,6 +230,10 @@ for step in range(200):
             device="cuda:0",
         )
 
+    #传入目标位置和姿态
+    # log.debug(f"Step {step}, Target EE position: {ee_pos_target}")
+    # log.debug(f"Step {step}, Target EE orientation: {ee_quat_target}")
+    # log.debug(f"Step {step}, Seed configuration: {seed_config}")
     result = robot_ik.solve_batch(Pose(ee_pos_target, ee_quat_target), seed_config=seed_config)
 
     q = torch.zeros((scenario.num_envs, robot.num_joints), device="cuda:0")
@@ -213,9 +245,14 @@ for step in range(200):
         {robot.name: {"dof_pos_target": dict(zip(robot.actuators.keys(), q[i_env].tolist()))}}
         for i_env in range(scenario.num_envs)
     ]
-
+    if step % 50 == 0:
+        log.debug(f"Step {step}, Actions: {actions}")
+        
     obs, reward, success, time_out, extras = env.step(actions)
 
+    if step==199:
+        observation = extract_observation(obs)
+        log.info(f"Observation: {observation}")
     if step == 0:
         for _ in range(50):
             obs, _, _, _, _ = env.step(actions)
