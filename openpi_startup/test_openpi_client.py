@@ -12,10 +12,10 @@ for step in range(num_steps):
     # The typical resize_size for pre-trained pi0 models is 224.
     # Note that the proprioceptive `state` can be passed unnormalized, normalization will be handled on the server side.
     observation = {
-        "observation/image": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
-        "observation/wrist_image": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
+        "observation/camera0": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
+        "observation/camera1": np.random.randint(256, size=(224, 224, 3), dtype=np.uint8),
         "observation/state": np.random.rand(8),
-        "prompt":  "do something",
+        "language instruction":  "do something",
     }
     # Call the policy server with the current observation.
     # This returns an action chunk of shape (action_horizon, action_dim).

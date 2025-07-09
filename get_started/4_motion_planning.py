@@ -171,24 +171,26 @@ init_states = [
 
 
 robot = scenario.robots[0]
-log.info(f"Robot: {robot.name}")
-log.info(f"Robot DOF: {robot.num_joints}")
+# log.info(f"Robot: {robot.name}")
+# log.info(f"Robot DOF: {robot.num_joints}")
 #log.info(f"Robot joint names: {robot.joint_names}")
-log.info(f"Robot actuator names: {robot.actuators.keys()}")
-log.info(f"Robot parameters:{robot}")
+# log.info(f"Robot actuator names: {robot.actuators.keys()}")
+# log.info(f"Robot parameters:{robot}")
 *_, robot_ik = get_curobo_models(robot)
 
-log.info(f"Robot IK: {robot_ik.robot_config}")
+# log.info(f"Robot IK: {robot_ik.robot_config}")
 
 curobo_n_dof = len(robot_ik.robot_config.cspace.joint_names)
 
-log.info(f"Robot number of DOF: {curobo_n_dof}")
+# log.info(f"Robot number of DOF: {curobo_n_dof}")
 ee_n_dof = len(robot.gripper_open_q)
-log.info(f"Robot end-effector DOF: {ee_n_dof}")
+# log.info(f"Robot end-effector DOF: {ee_n_dof}")
 
 obs, extras = env.reset(states=init_states)
 os.makedirs("get_started/output", exist_ok=True)
 
+ee_init_pos = obs.robots[robot.name].body_state[0][0][:3]
+log.info(f"Initial end-effector position: {ee_init_pos}")
 
 ## Main loop
 obs_saver = ObsSaver(video_path=f"get_started/output/4_motion_planning_{args.sim}.mp4")
@@ -198,9 +200,9 @@ step = 0
 robot_joint_limits = scenario.robots[0].joint_limits
 for step in range(200):
     states = env.handler.get_states()
-    if step % 200 == 0:
-        log.debug(f"Step {step}")
-        log.info(f"Step {step}, Robot joint states: {states}")
+    # if step % 200 == 0:
+    #     log.debug(f"Step {step}")
+    #     log.info(f"Step {step}, Robot joint states: {states}")
 
 
     curr_robot_q = states.robots[robot.name].joint_pos.cuda()
@@ -211,7 +213,7 @@ for step in range(200):
         y_target = 0.5 - 0.5 * (step / 100)
         z_target = 0.6 - 0.2 * (step / 100)
         # Randomly assign x/y/z target for each env
-        ee_pos_target = torch.zeros((args.num_envs, 3), device="cuda:0")
+        ee_pos_target = torch.zeros((args.num_envs, 3), device="cuda:0")#dim = 3
         for i in range(args.num_envs):
             if i % 3 == 0:
                 ee_pos_target[i] = torch.tensor([x_target, 0.0, 0.6], device="cuda:0")
@@ -245,14 +247,14 @@ for step in range(200):
         {robot.name: {"dof_pos_target": dict(zip(robot.actuators.keys(), q[i_env].tolist()))}}
         for i_env in range(scenario.num_envs)
     ]
-    if step % 50 == 0:
-        log.debug(f"Step {step}, Actions: {actions}")
-        
+    # if step % 50 == 0:
+    #     log.debug(f"Step {step}, Actions: {actions}")
+
     obs, reward, success, time_out, extras = env.step(actions)
 
-    if step==199:
-        observation = extract_observation(obs)
-        log.info(f"Observation: {observation}")
+    # if step==199:
+    #     observation = extract_observation(obs)
+    #     log.info(f"Observation: {observation}")
     if step == 0:
         for _ in range(50):
             obs, _, _, _, _ = env.step(actions)
