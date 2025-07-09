@@ -9,7 +9,7 @@ import numpy as np
 import torch
 from loguru import logger as log
 from numpy.typing import NDArray
-from torchvision.utils import make_grid, save_image
+from torchvision.utils import make_grid
 
 from metasim.utils.state import TensorState
 
@@ -31,8 +31,10 @@ class ObsSaver:
             return
 
         try:
-            image = [make_grid(camera.rgb.permute(0, 3, 1, 2) / 255, nrow=int(camera.rgb.shape[0] ** 0.5))
-                     for camera in state.cameras.values()]
+            image = [
+                make_grid(camera.rgb.permute(0, 3, 1, 2) / 255, nrow=int(camera.rgb.shape[0] ** 0.5))
+                for camera in state.cameras.values()
+            ]
         except Exception as e:
             log.error(f"Error adding observation: {e}")
             return

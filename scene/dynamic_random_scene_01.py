@@ -21,13 +21,13 @@ rootutils.setup_root(__file__, pythonpath=True)
 log.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
 
 
-from scene.utils import ObsSaver
-from metasim.cfg.objects import ArticulationObjCfg, PrimitiveCubeCfg, PrimitiveSphereCfg, RigidObjCfg
+from metasim.cfg.objects import RigidObjCfg
 from metasim.cfg.scenario import ScenarioCfg
 from metasim.cfg.sensors import PinholeCameraCfg
 from metasim.constants import PhysicStateType, SimType
 from metasim.utils import configclass
 from metasim.utils.setup_util import get_sim_env_class
+from scene.utils import ObsSaver
 
 
 @configclass
@@ -61,8 +61,10 @@ scenario = ScenarioCfg(
 )
 
 # add cameras
-scenario.cameras = [PinholeCameraCfg("cam1", width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0)),
-                    PinholeCameraCfg("cam2", width=1024, height=1024, pos=(0.3, 0.0, 2.5), look_at=(0.3, 0.0, 0.0))]
+scenario.cameras = [
+    PinholeCameraCfg("cam1", width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0)),
+    PinholeCameraCfg("cam2", width=1024, height=1024, pos=(0.3, 0.0, 2.5), look_at=(0.3, 0.0, 0.0)),
+]
 
 # add objects
 scenario.objects = [
@@ -95,7 +97,7 @@ init_states = [
                     [
                         x_low + (x_high - x_low) * torch.rand(1).item(),
                         y_low + (y_high - y_low) * torch.rand(1).item(),
-                        z
+                        z,
                     ],
                 ),
                 "rot": torch.tensor([1.0, 0.0, 0.0, 0.0]),
