@@ -1,26 +1,13 @@
-
-# -------------------------------------------------
-# 资产基本配置
-# -------------------------------------------------
-
 assets:
   bbq_sauce: &bbq_sauce
     scale: [1.0, 1.0, 1.0]
     physics: "RIGIDBODY"
-    usd: "scene/example_assets/bbq_sauce/usd/bbq_sauce.usd"
-    urdf: "scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf"
-    mjcf: "scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml"
-
-# -------------------------------------------------
-# 仿真和机器人基本配置
-# -------------------------------------------------
-
-# -------------------------------------------------
-# 场景配置
-# -------------------------------------------------
+    usd_path: "scene/example_assets/bbq_sauce/usd/bbq_sauce.usd"
+    urdf_path: "scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf"
+    mjcf_path: "scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml"
 scenario:
-
-  robots: franka
+  robots:
+    - franka
   sim: isaaclab
   num_envs: 1
   headless: false
@@ -37,8 +24,6 @@ scenario:
       height: 1024
       pos: [0.3, 0.0, 2.5]
       look_at: [0.3, 0.0, 0.0]
-
-  # 物体配置
   objects:
     - name: bbq_sauce_1_1
       <<: *bbq_sauce
@@ -46,10 +31,6 @@ scenario:
       <<: *bbq_sauce
     - name: bbq_sauce_1_3
       <<: *bbq_sauce
-
-# -------------------------------------------------
-# 初始状态配置 (只配置一个环境)
-# -------------------------------------------------
 initial_state:
   objects:
     bbq_sauce_1_1:
