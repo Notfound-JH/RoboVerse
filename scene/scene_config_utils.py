@@ -93,16 +93,15 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
 
     # 1. 提取资产 (Assets)
     asset_definitions = {}
-    if scenario.objects:
-        first_obj = scenario.objects[0]
-        asset_name = first_obj.name.rsplit('_', 2)[0]
+    for object in scenario.objects:
+        asset_name = object.name.rsplit('_', 1)[0]
         # 这个 asset_data 对象将在多处被引用
         asset_data = {
-            "scale": list(first_obj.scale),
-            "physics": first_obj.physics.name,
-            "usd_path": first_obj.usd_path,
-            "urdf_path": first_obj.urdf_path,
-            "mjcf_path": first_obj.mjcf_path,
+            "scale": list(object.scale),
+            "physics": object.physics.name,
+            "usd_path": object.usd_path,
+            "urdf_path": object.urdf_path,
+            "mjcf_path": object.mjcf_path,
         }
         asset_definitions[asset_name] = asset_data
 
@@ -120,7 +119,7 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
 
     # 3. 填充物体信息，并引用共享的资产对象
     for obj in scenario.objects:
-        asset_name_ref = obj.name.rsplit('_', 2)[0]
+        asset_name_ref = obj.name.rsplit('_', 1)[0]
         obj_entry = {"name": obj.name}
         if asset_name_ref in asset_definitions:
             # 关键：将共享的资产字典对象本身赋值给 '<<' 键
