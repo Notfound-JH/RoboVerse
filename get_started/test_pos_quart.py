@@ -210,7 +210,6 @@ for step in range(200):
     q[ik_succ, :curobo_n_dof] = result.solution[ik_succ, 0].clone()
     q[:, -ee_n_dof:] = 0.04
     robot = scenario.robots[0]
-
     actions = [
         {robot.name: {"dof_pos_target": dict(zip(robot.actuators.keys(), q[i_env].tolist()))}}
         for i_env in range(scenario.num_envs)

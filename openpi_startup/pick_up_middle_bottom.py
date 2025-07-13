@@ -61,8 +61,8 @@ scenario = ScenarioCfg(
 
 # add cameras
 scenario.cameras = [
-    PinholeCameraCfg("cam1", width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0)),
-    PinholeCameraCfg("cam2", width=1024, height=1024, pos=(0.3, 0.0, 2.5), look_at=(0.3, 0.0, 0.0)),
+    PinholeCameraCfg("camera0", width=1024, height=1024, pos=(1.5, -1.5, 1.5), look_at=(0.0, 0.0, 0.0)),
+    PinholeCameraCfg("camera1", width=1024, height=1024, pos=(0.3, 0.0, 2.5), look_at=(0.3, 0.0, 0.0)),
 ]
 
 # add objects
@@ -135,32 +135,30 @@ init_states = [
 ]
 obs, extras = env.reset(states=init_states)
 os.makedirs("scene/output", exist_ok=True)
-
-
 ## Main loop
-obs_saver = ObsSaver(video_path=f"scene/output/static_scene_02_{args.sim}.mp4")
-obs_saver.add(obs)
+# obs_saver = ObsSaver(video_path=f"scene/output/static_scene_02_{args.sim}.mp4")
+# obs_saver.add(obs)
 
-step = 0
-robot = scenario.robots[0]
-for _ in range(100):
-    log.debug(f"Step {step}")
-    actions = [
-        {
-            robot.name: {
-                "dof_pos_target": {
-                    joint_name: (
-                        torch.rand(1).item() * (robot.joint_limits[joint_name][1] - robot.joint_limits[joint_name][0])
-                        + robot.joint_limits[joint_name][0]
-                    )
-                    for joint_name in robot.joint_limits.keys()
-                }
-            }
-        }
-        for _ in range(scenario.num_envs)
-    ]
-    obs, reward, success, time_out, extras = env.step(actions)
-    obs_saver.add(obs)
-    step += 1
+# step = 0
+# robot = scenario.robots[0]
+# for _ in range(100):
+#     log.debug(f"Step {step}")
+#     actions = [
+#         {
+#             robot.name: {
+#                 "dof_pos_target": {
+#                     joint_name: (
+#                         torch.rand(1).item() * (robot.joint_limits[joint_name][1] - robot.joint_limits[joint_name][0])
+#                         + robot.joint_limits[joint_name][0]
+#                     )
+#                     for joint_name in robot.joint_limits.keys()
+#                 }
+#             }
+#         }
+#         for _ in range(scenario.num_envs)
+#     ]
+#     obs, reward, success, time_out, extras = env.step(actions)
+#     obs_saver.add(obs)
+#     step += 1
 
-obs_saver.save()
+# obs_saver.save()
