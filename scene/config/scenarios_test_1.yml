@@ -5,9 +5,9 @@ assets:
     - 2
     - 2
     physics: RIGIDBODY
-    usd: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
-    urdf: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
-    mjcf: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
+    usd_path: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
+    urdf_path: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
+    mjcf_path: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
 scenario:
   sim: isaaclab
   num_envs: 1
@@ -41,21 +41,21 @@ scenario:
   - name: bbq_sauce_1_1
     scale: *id001
     physics: RIGIDBODY
-    usd: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
-    urdf: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
-    mjcf: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
+    usd_path: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
+    urdf_path: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
+    mjcf_path: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
   - name: bbq_sauce_1_2
     scale: *id001
     physics: RIGIDBODY
-    usd: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
-    urdf: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
-    mjcf: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
+    usd_path: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
+    urdf_path: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
+    mjcf_path: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
   - name: bbq_sauce_1_3
     scale: *id001
     physics: RIGIDBODY
-    usd: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
-    urdf: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
-    mjcf: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
+    usd_path: scene/example_assets/bbq_sauce/usd/bbq_sauce.usd
+    urdf_path: scene/example_assets/bbq_sauce/urdf/bbq_sauce.urdf
+    mjcf_path: scene/example_assets/bbq_sauce/mjcf/bbq_sauce.xml
   robots:
   - franka
 initial_state:

@@ -50,6 +50,11 @@ def get_scene_from_config(config_name: str):
     )
     log.info(f"Scenario configuration loaded from {config_name}: {scenario}")
     # Add cameras
+    # 【关键修改】在创建 PinholeCameraCfg 之前，将 clipping_range 从列表转换为元组
+    for cam_data in scenario_data.get('cameras', []):
+        if 'clipping_range' in cam_data and isinstance(cam_data['clipping_range'], list):
+            cam_data['clipping_range'] = tuple(cam_data['clipping_range'])
+
     scenario.cameras = [PinholeCameraCfg(**cam_data) for cam_data in scenario_data.get('cameras', [])]
 
     #Add objects
@@ -73,7 +78,7 @@ def get_scene_from_config(config_name: str):
                 cam_name: to_torch_tensor(state) for cam_name, state in initial_state['cameras'].items()
             }
     init_states = [initial_state for _ in range(scenario.num_envs)]
-
+    log.info(f"scenario: {scenario}")
     return scenario, init_states
 
 def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filename: str):
