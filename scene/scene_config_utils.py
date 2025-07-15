@@ -40,7 +40,6 @@ def get_scene_from_config(config_name: str):
     config = read_config(config_name)
 
     scenario_data = config['scenario']
-    log.info(f"{scenario_data.get('robots', [scenario_data['robots']])}")
     scenario = ScenarioCfg(
         robots=scenario_data.get('robots', [scenario_data['robots']]),
         try_add_table=scenario_data.get('try_add_table', False),
@@ -78,7 +77,6 @@ def get_scene_from_config(config_name: str):
                 cam_name: to_torch_tensor(state) for cam_name, state in initial_state['cameras'].items()
             }
     init_states = [initial_state for _ in range(scenario.num_envs)]
-    log.info(f"scenario: {scenario}")
     return scenario, init_states
 
 def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filename: str):
@@ -155,7 +153,6 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
                 # 然后，单独处理我们弹出的合并对象
                 # PyYAML 会自动检测到这是一个已见过的对象，并生成别名节点
                 alias_node = self.represent_data(merge_obj)
-                print(f"alias_node: {alias_node}")
 
                 # 创建一个不带引号的合并键 '<<' 节点
                 merge_key_node = yaml.ScalarNode('tag:yaml.org,2002:merge', '<<')
