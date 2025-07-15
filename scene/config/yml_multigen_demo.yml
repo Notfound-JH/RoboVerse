@@ -23,6 +23,49 @@ assets:
     - 2
     - 2
     isaacgym_read_mjcf: false
+  cube: &id002
+    default_position:
+    - 0.0
+    - 0.0
+    - 0.0
+    default_orientation:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+    fix_base_link: false
+    enabled_gravity: true
+    collision_enabled: true
+    physics: RIGIDBODY
+    mass: 0.1
+    color:
+    - 1.0
+    - 0.0
+    - 0.0
+    size:
+    - 0.1
+    - 0.1
+    - 0.1
+  sphere: &id003
+    default_position:
+    - 0.0
+    - 0.0
+    - 0.0
+    default_orientation:
+    - 1.0
+    - 0.0
+    - 0.0
+    - 0.0
+    fix_base_link: false
+    enabled_gravity: true
+    collision_enabled: true
+    physics: RIGIDBODY
+    mass: 0.1
+    color:
+    - 0.0
+    - 0.0
+    - 1.0
+    radius: 0.1
 scenario:
   robots:
   - franka
@@ -75,24 +118,36 @@ scenario:
   objects:
   - <<: *id001
     name: bbq_sauce_1
-  - <<: *id001
-    name: bbq_sauce_2
+  - <<: *id002
+    name: cube_1
+  - <<: *id003
+    name: sphere_1
 initial_state:
   objects:
     bbq_sauce_1:
       pos:
-      - 0.7227710485458374
-      - 0.21495550870895386
+      - 0.4798002243041992
+      - 0.3195986747741699
       - 0.12999999523162842
       rot:
       - 1.0
       - 0.0
       - 0.0
       - 0.0
-    bbq_sauce_2:
+    cube_1:
       pos:
-      - 0.3327859938144684
-      - 0.43222057819366455
+      - 0.6914907097816467
+      - -0.019185960292816162
+      - 0.12999999523162842
+      rot:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+    sphere_1:
+      pos:
+      - 0.7832552790641785
+      - -0.34023600816726685
       - 0.12999999523162842
       rot:
       - 1.0

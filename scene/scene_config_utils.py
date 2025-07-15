@@ -11,7 +11,7 @@ from rich.logging import RichHandler
 rootutils.setup_root(__file__, pythonpath=True)
 log.configure(handlers=[{"sink": RichHandler(), "format": "{message}"}])
 
-
+from metasim.cfg.objects import ArticulationObjCfg, PrimitiveCubeCfg, PrimitiveSphereCfg, RigidObjCfg
 from metasim.cfg.objects import RigidObjCfg
 from metasim.cfg.scenario import ScenarioCfg
 from metasim.cfg.sensors import PinholeCameraCfg
@@ -38,30 +38,58 @@ def read_config(config_name: str) -> dict:
 def get_scene_from_config(config_name: str):
     """Read the scene configuration from a YAML file."""
     config = read_config(config_name)
-
     scenario_data = config['scenario']
+    assets = config.get('assets', {})
+
+    # 1. 预处理物体列表，将资产属性合并进去
+    processed_objects = []
+    for obj_data in scenario_data.get('objects', []):
+        # 查找合并键 '<<'
+        asset_ref_data = obj_data.pop('<<', None)
+        if asset_ref_data:
+            # 创建一个新的字典，先放资产属性，再用物体自身属性覆盖
+            merged_data = asset_ref_data.copy()
+            merged_data.update(obj_data)
+            processed_objects.append(merged_data)
+        else:
+            processed_objects.append(obj_data)
+
+    # 2. 创建 ScenarioCfg
     scenario = ScenarioCfg(
-        robots=scenario_data.get('robots', [scenario_data['robots']]),
+        robots=scenario_data.get('robots', []),
         try_add_table=scenario_data.get('try_add_table', False),
         sim=scenario_data.get('sim', 'isaaclab'),
         headless=scenario_data.get('headless', False),
         num_envs=scenario_data.get('num_envs', 1),
     )
     log.info(f"Scenario configuration loaded from {config_name}: {scenario}")
-    # Add cameras
-    # 【关键修改】在创建 PinholeCameraCfg 之前，将 clipping_range 从列表转换为元组
+
+    # 3. 添加相机
     for cam_data in scenario_data.get('cameras', []):
         if 'clipping_range' in cam_data and isinstance(cam_data['clipping_range'], list):
             cam_data['clipping_range'] = tuple(cam_data['clipping_range'])
-
     scenario.cameras = [PinholeCameraCfg(**cam_data) for cam_data in scenario_data.get('cameras', [])]
 
-    #Add objects
-    for obj_data in scenario_data.get('objects', []):
-        obj_data['physics'] = PhysicStateType[obj_data['physics']]
-    scenario.objects = [RigidObjCfg(**obj_data) for obj_data in scenario_data.get('objects', [])]
+    # 4. 添加物体 (使用我们预处理过的列表)
+    object_cfgs = []
+    for obj_data in processed_objects:
+        # 将字符串形式的 physics 转换为枚举类型
+        if 'physics' in obj_data and isinstance(obj_data['physics'], str):
+            obj_data['physics'] = PhysicStateType[obj_data['physics']]
 
-    #setup the initial state
+        # 根据物体的属性来决定使用哪个配置类 (这里需要一些逻辑)
+        # 一个简单的判断方法是检查是否存在 'radius' 或 'size'
+        # if 'fix_base_link' in obj_data:
+        #     object_cfgs.append(ArticulationObjCfg(**obj_data))
+        if 'radius' in obj_data:
+            object_cfgs.append(PrimitiveSphereCfg(**obj_data))
+        elif 'size' in obj_data:
+            object_cfgs.append(PrimitiveCubeCfg(**obj_data))
+        else:
+            object_cfgs.append(RigidObjCfg(**obj_data))
+    scenario.objects = object_cfgs
+
+    # 5. 设置初始状态
     if 'initial_state' in config:
         initial_state = config['initial_state']
         if 'robots' in initial_state:
@@ -82,7 +110,7 @@ def get_scene_from_config(config_name: str):
 def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filename: str):
     """
     将 ScenarioCfg 对象和 init_states 列表转换为一个简洁、人类可读的 YAML 文件。
-    此版本能正确生成带资产引用 (<<: *alias) 且无引号的格式。
+    此版本能正确生成带多种资产引用 (<<: *alias) 且无引号的格式。
     """
 
     # 辅助函数：将特殊类型转换为YAML基本类型
@@ -90,23 +118,25 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
         if isinstance(v, torch.Tensor): return v.tolist()
         if isinstance(v, PhysicStateType): return v.name
         if isinstance(v, tuple): return list(v)
+        # 新增：处理 dataclass 对象
+        if hasattr(v, '__dict__'):
+             # 过滤掉私有或不需要的属性
+            return {k: sanitize_value(v_new) for k, v_new in vars(v).items() if not k.startswith('_')}
         if isinstance(v, dict): return {k: sanitize_value(v_new) for k, v_new in v.items()}
         if isinstance(v, list): return [sanitize_value(i) for i in v]
         return v
 
-    # 1. 提取资产 (Assets)
+    # 1. 提取资产 (Assets) - 支持多种资产
     asset_definitions = {}
-    for object in scenario.objects:
-        asset_name = object.name.rsplit('_', 1)[0]
-        # 这个 asset_data 对象将在多处被引用
-        asset_data = {
-            "scale": list(object.scale),
-            "physics": object.physics.name,
-            "usd_path": object.usd_path,
-            "urdf_path": object.urdf_path,
-            "mjcf_path": object.mjcf_path,
-        }
-        asset_definitions[asset_name] = asset_data
+    for obj in scenario.objects:
+        # 从物体名称推断资产名称，例如 "bbq_sauce_1" -> "bbq_sauce"
+        asset_name = obj.name.rsplit('_', 1)[0]
+        # 如果是第一次遇到这种类型的资产，则为其创建定义
+        if asset_name not in asset_definitions:
+            # 将对象配置转换为字典，并移除 'name'，因为名称是实例相关的
+            asset_data = sanitize_value(obj)
+            asset_data.pop('name', None)
+            asset_definitions[asset_name] = asset_data
 
     # 2. 构建 'scenario' 部分
     scenario_dict = {
@@ -116,16 +146,15 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
         "headless": scenario.headless,
         "try_add_table": scenario.try_add_table,
         "task": "task description placeholder",
-        "cameras": [sanitize_value(vars(cam)) for cam in scenario.cameras],
+        "cameras": [sanitize_value(cam) for cam in scenario.cameras],
         "objects": [],
     }
 
-    # 3. 填充物体信息，并引用共享的资产对象
+    # 3. 填充物体信息，并引用正确的资产
     for obj in scenario.objects:
         asset_name_ref = obj.name.rsplit('_', 1)[0]
         obj_entry = {"name": obj.name}
         if asset_name_ref in asset_definitions:
-            # 关键：将共享的资产字典对象本身赋值给 '<<' 键
             obj_entry['<<'] = asset_definitions[asset_name_ref]
         scenario_dict["objects"].append(obj_entry)
 
@@ -139,30 +168,16 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
         "initial_state": initial_state_dict,
     }
 
-    # 6. 创建能正确处理合并键的 CustomDumper
+    # 6. 使用能处理合并键的 CustomDumper
     class CustomDumper(yaml.SafeDumper):
         def represent_mapping(self, tag, mapping, flow_style=None):
-            # 检查字典中是否有我们定义的合并键
             if '<<' in mapping:
-                # 将 '<<' 键值对从字典中弹出
                 merge_obj = mapping.pop('<<')
-
-                # 首先，正常处理字典中剩余的普通键值对 (如 'name')
                 node = super().represent_mapping(tag, mapping, flow_style=flow_style)
-
-                # 然后，单独处理我们弹出的合并对象
-                # PyYAML 会自动检测到这是一个已见过的对象，并生成别名节点
                 alias_node = self.represent_data(merge_obj)
-
-                # 创建一个不带引号的合并键 '<<' 节点
                 merge_key_node = yaml.ScalarNode('tag:yaml.org,2002:merge', '<<')
-
-                # 将 (合并键, 别名) 节点对插入到节点列表
-                node.value.insert(1, (merge_key_node, alias_node))
-
+                node.value.insert(0, (merge_key_node, alias_node))
                 return node
-
-            # 如果没有 '<<' 键，则正常处理
             return super().represent_mapping(tag, mapping, flow_style=flow_style)
 
     # 7. 写入 YAML 文件
