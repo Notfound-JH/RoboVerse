@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import yaml
+import importlib
 import rootutils
 import torch
 from typing import List
@@ -35,9 +36,17 @@ def read_config(config_name: str) -> dict:
     pprint.pprint(config)
     return config
 
+def load_class(path: str):
+    """Load a class from a string path."""
+    module_name, class_name = path.rsplit('.', 1)
+    module = importlib.import_module(module_name)
+    return getattr(module, class_name)
+
 def get_scene_from_config(config_name: str):
     """Read the scene configuration from a YAML file."""
     config = read_config(config_name)
+    registry_path = "scene/config/registry.yml"
+    registry_cfg = read_config(registry_path)
     scenario_data = config['scenario']
     assets = config.get('assets', {})
 
@@ -77,16 +86,16 @@ def get_scene_from_config(config_name: str):
         if 'physics' in obj_data and isinstance(obj_data['physics'], str):
             obj_data['physics'] = PhysicStateType[obj_data['physics']]
 
-        # 根据物体的属性来决定使用哪个配置类 (这里需要一些逻辑)
-        # 一个简单的判断方法是检查是否存在 'radius' 或 'size'
-        # if 'fix_base_link' in obj_data:
-        #     object_cfgs.append(ArticulationObjCfg(**obj_data))
-        if 'radius' in obj_data:
-            object_cfgs.append(PrimitiveSphereCfg(**obj_data))
-        elif 'size' in obj_data:
-            object_cfgs.append(PrimitiveCubeCfg(**obj_data))
-        else:
-            object_cfgs.append(RigidObjCfg(**obj_data))
+        # 根据注册表加载对应的配置类
+        if 'type' in obj_data:
+            obj_type = obj_data.pop('type')
+            if obj_type in registry_cfg:
+                class_path = registry_cfg[obj_type]
+                obj_class = load_class(class_path)
+                object_cfgs.append(obj_class(**obj_data))
+            else:
+                log.warning(f"Object type '{obj_type}' not found in registry. Using RigidObjCfg as default.")
+                object_cfgs.append(RigidObjCfg(**obj_data))
     scenario.objects = object_cfgs
 
     # 5. 设置初始状态
@@ -136,6 +145,7 @@ def gen_scene_to_config(scenario: ScenarioCfg, init_states: List, output_filenam
             # 将对象配置转换为字典，并移除 'name'，因为名称是实例相关的
             asset_data = sanitize_value(obj)
             asset_data.pop('name', None)
+            asset_data['type'] = asset_name  # 添加类型信息
             asset_definitions[asset_name] = asset_data
 
     # 2. 构建 'scenario' 部分

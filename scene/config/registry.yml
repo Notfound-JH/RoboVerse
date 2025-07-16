@@ -1,0 +1,3 @@
+cube: metasim.cfg.objects.PrimitiveCubeCfg
+sphere: metasim.cfg.objects.PrimitiveSphereCfg
+bbq_sauce: metasim.cfg.objects.RigidObjCfg
