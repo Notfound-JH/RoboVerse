@@ -18,6 +18,7 @@ from metasim.cfg.objects import (
 from metasim.cfg.randomization import FrictionRandomCfg, MassRandomCfg
 from metasim.cfg.scenario import ScenarioCfg
 from metasim.constants import PhysicStateType
+from metasim.queries.base import BaseQueryType
 from metasim.sim import BaseSimHandler, EnvWrapper, GymEnvWrapper
 from metasim.types import Action, EnvState
 from metasim.utils.dict import class_to_dict
@@ -25,8 +26,8 @@ from metasim.utils.state import CameraState, ObjectState, RobotState, TensorStat
 
 
 class IsaacgymHandler(BaseSimHandler):
-    def __init__(self, scenario: ScenarioCfg):
-        super().__init__(scenario)
+    def __init__(self, scenario: ScenarioCfg, optional_queries: dict[str, BaseQueryType] | None = None):
+        super().__init__(scenario, optional_queries)
         self._actions_cache: list[Action] = []
         self._robot_names = {self.robot.name}
         self._robot_init_pos = self.robot.default_position
@@ -175,11 +176,23 @@ class IsaacgymHandler(BaseSimHandler):
                 camera_props.far_plane = cam_cfg.clipping_range[1]
                 camera_props.enable_tensors = True
                 camera_handle = self.gym.create_camera_sensor(self._envs[i_env], camera_props)
+
                 self._camera_handles.append(camera_handle)
 
                 camera_eye = gymapi.Vec3(*cam_cfg.pos)
                 camera_lookat = gymapi.Vec3(*cam_cfg.look_at)
                 self.gym.set_camera_location(camera_handle, self._envs[i_env], camera_eye, camera_lookat)
+                if cam_cfg.mount_to is not None:
+                    if isinstance(cam_cfg.mount_link, str):
+                        mount_handle = self._robot_link_dict[cam_cfg.mount_link]
+                    elif isinstance(cam_cfg.mount_link, tuple):
+                        mount_handle = self._robot_link_dict[cam_cfg.mount_link[1]]
+                    camera_pose = gymapi.Transform(
+                        gymapi.Vec3(*cam_cfg.mount_pos), gymapi.Quat(*cam_cfg.mount_quat[1:], cam_cfg.mount_quat[0])
+                    )
+                    self.gym.attach_camera_to_body(
+                        camera_handle, self._envs[i_env], mount_handle, camera_pose, gymapi.FOLLOW_TRANSFORM
+                    )
 
                 camera_tensor_depth = self.gym.get_camera_image_gpu_tensor(
                     self.sim, self._envs[i_env], camera_handle, gymapi.IMAGE_DEPTH
@@ -229,7 +242,7 @@ class IsaacgymHandler(BaseSimHandler):
             asset_path = object.mjcf_path if object.isaacgym_read_mjcf else object.urdf_path
             asset_options = gymapi.AssetOptions()
             asset_options.armature = 0.01
-            asset_options.fix_base_link = True
+            asset_options.fix_base_link = object.fix_base_link
             asset_options.disable_gravity = not object.enabled_gravity
             asset_options.flip_visual_attachments = False
             asset = self.gym.load_asset(self.sim, asset_root, asset_path, asset_options)
@@ -643,7 +656,7 @@ class IsaacgymHandler(BaseSimHandler):
             # reverse sorted joint indices
             reverse_reindex = self.get_joint_reindex(obj_name, inverse=True)
             self._actions_cache = actions[:, reverse_reindex]
-            action_array_all = actions
+            action_array_all = self._actions_cache
 
         else:
             action_array_all = self._get_action_array_all(actions)
@@ -726,7 +739,6 @@ class IsaacgymHandler(BaseSimHandler):
         self.gym.refresh_jacobian_tensors(self.sim)
         self.gym.refresh_mass_matrix_tensors(self.sim)
         self.gym.refresh_net_contact_force_tensor(self.sim)
-
         # Refresh cameras and viewer
         self._render()
 
@@ -736,10 +748,14 @@ class IsaacgymHandler(BaseSimHandler):
             for evt in self.gym.query_viewer_action_events(self.viewer):
                 if evt.action == "toggle_viewer_sync" and evt.value > 0:
                     self._enable_viewer_sync = not self._enable_viewer_sync
+        if self._enable_viewer_sync or len(self.cameras) > 0:
+            self.gym.step_graphics(self.sim)
+            if len(self.cameras) > 0:
+                self.gym.render_all_camera_sensors(self.sim)
             if self._enable_viewer_sync:
-                self.gym.step_graphics(self.sim)
                 self.gym.draw_viewer(self.viewer, self.sim, False)
-            else:
+        else:
+            if not self.headless:
                 self.gym.poll_viewer_events(self.viewer)
 
     def _compute_effort(self, actions):
